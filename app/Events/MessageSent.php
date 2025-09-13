@@ -31,6 +31,9 @@ class MessageSent implements ShouldBroadcast
         return [
             'message' => $this->message->message,
             'sender_id' => $this->message->sender_id,
+            'image_path' => $this->message->image_path,
+            // ✅ Generate a direct public URL
+            'image_url' => $this->message->image_path ? asset($this->message->image_path) : null,
         ];
     }
 }

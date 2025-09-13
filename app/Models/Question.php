@@ -11,8 +11,13 @@ class Question extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['quiz_id', 'question_text'];
 
+
+    protected $fillable = [
+        'quiz_id',
+        'type',      // Add this
+        'content',   // Change 'question_text' to 'content'
+    ];
     // The typo was here
     public function quiz(): BelongsTo
     {
@@ -22,5 +27,9 @@ class Question extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(Answer::class);
+    }
+    public function getImageUrlAttribute()
+    {
+        return $this->question_image ? asset($this->question_image) : null;
     }
 }

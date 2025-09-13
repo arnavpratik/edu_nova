@@ -18,5 +18,6 @@ class Message extends Model
         'sender_id',
         'receiver_id',
         'message',
+        'image_path', // ✅ Add this line
     ];
 }

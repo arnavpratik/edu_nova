@@ -10,10 +10,19 @@ class Answer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['question_id', 'answer_text', 'is_correct'];
+    protected $fillable = [
+        'question_id',
+        'type',         // Ensure this is present
+        'content',      // Ensure this is present
+        'is_correct',
+    ];
 
     public function question(): BelongsTo
     {
         return $this->belongsTo(Question::class);
+    }
+    public function getImageUrlAttribute()
+    {
+        return $this->answer_image ? asset($this->answer_image) : null;
     }
 }
