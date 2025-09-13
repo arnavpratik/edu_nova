@@ -13,6 +13,8 @@ use App\Http\Controllers\Student\QuizController as StudentQuizController;
 use App\Http\Controllers\Student\EnrollmentController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Teacher\AnalyticsController;
+use App\Http\Controllers\Student\CommentController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,51 +46,52 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-    
-    Route::get('/dashboard', function () { 
-        $studentCount = User::where('role', 'student')->count();
-        $teacherCount = User::where('role', 'teacher')->count();
-        $courseCount = Course::count();
-        
-        return view('admin.dashboard', [
-            'studentCount' => $studentCount,
-            'teacherCount' => $teacherCount,
-            'courseCount' => $courseCount
-        ]);
-    })->name('dashboard');
 
-    // Routes for User Management
-    Route::get('/users', [UserController::class, 'index'])->name('users.index');
-    Route::get('/users/create-teacher', [UserController::class, 'createTeacher'])->name('users.create-teacher');
-    Route::post('/users/store-teacher', [UserController::class, 'storeTeacher'])->name('users.store-teacher');
-    // Changed edit/update routes to a single delete route
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-});
+        Route::get('/dashboard', function () {
+            $studentCount = User::where('role', 'student')->count();
+            $teacherCount = User::where('role', 'teacher')->count();
+            $courseCount = Course::count();
+
+            return view('admin.dashboard', [
+                'studentCount' => $studentCount,
+                'teacherCount' => $teacherCount,
+                'courseCount' => $courseCount
+            ]);
+        })->name('dashboard');
+
+        // Routes for User Management
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create-teacher', [UserController::class, 'createTeacher'])->name('users.create-teacher');
+        Route::post('/users/store-teacher', [UserController::class, 'storeTeacher'])->name('users.store-teacher');
+        // Changed edit/update routes to a single delete route
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
 
 // Teacher routes
 Route::middleware(['auth', 'role:teacher'])
     ->prefix('teacher')
     ->name('teacher.')
     ->group(function () {
-    
-    Route::get('/dashboard', function () {
-        $courses = Course::where('teacher_id', Auth::id())->get();
-        return view('teacher.dashboard', ['courses' => $courses]);
-    })->name('dashboard');
 
-    Route::resource('courses', TeacherCourseController::class);
-    Route::resource('lessons', TeacherLessonController::class);
-    
-    Route::get('/courses/{course}/analytics', [AnalyticsController::class, 'show'])->name('courses.analytics');
-});
+        Route::get('/dashboard', function () {
+            $courses = Course::where('teacher_id', Auth::id())->get();
+            return view('teacher.dashboard', ['courses' => $courses]);
+        })->name('dashboard');
+
+        Route::resource('courses', TeacherCourseController::class);
+        Route::resource('lessons', TeacherLessonController::class);
+        Route::get('/chats', [\App\Http\Controllers\ChatController::class, 'index'])->name('chats.index');
+
+        Route::get('/courses/{course}/analytics', [AnalyticsController::class, 'show'])->name('courses.analytics');
+    });
 
 
 // Student routes
 Route::middleware(['auth', 'role:student'])->group(function () {
     Route::get('/student/dashboard', function () {
-        
+
         $user = Auth::user();
-        
+
         // Enrollment Logic
         $enrolledCourseIds = $user->courses()->pluck('courses.id');
         $enrolledCourses = Course::whereIn('id', $enrolledCourseIds)->get();
@@ -108,19 +111,20 @@ Route::middleware(['auth', 'role:student'])->group(function () {
                 ->first();
 
             if ($latestAttempt && $latestAttempt->score < 70) {
-                $latestAttempt->load('quiz.lesson'); 
+                $latestAttempt->load('quiz.lesson');
                 if ($latestAttempt->quiz && $latestAttempt->quiz->lesson) {
                     $revisionLessons->push($latestAttempt->quiz->lesson);
                 }
             }
         }
-        
+
         return view('student.dashboard', [
             'enrolledCourses' => $enrolledCourses,
             'availableCourses' => $availableCourses,
             'revisionLessons' => $revisionLessons->unique('id')->take(5),
         ]);
     })->name('student.dashboard');
+    Route::post('/lessons/{lesson}/comments', [CommentController::class, 'store'])->name('student.comments.store');
 
     Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'enroll'])->name('student.courses.enroll');
     Route::get('/courses/{course}', [StudentCourseController::class, 'show'])->name('student.courses.show');
@@ -135,7 +139,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/chat/{receiver}', [ChatController::class, 'showChat'])->name('chat.show');
+    Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/{receiver}/messages', [ChatController::class, 'fetchMessages'])->name('chat.fetch');
 });
 
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

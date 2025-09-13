@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Comment;
 
 class User extends Authenticatable
 {
@@ -40,20 +41,24 @@ class User extends Authenticatable
         return $this->belongsToMany(Course::class);
     }
 
-    
+
     public function teacherCourses(): HasMany
     {
         return $this->hasMany(Course::class, 'teacher_id');
     }
 
-   
+
     public function quizAttempts(): HasMany
     {
         return $this->hasMany(QuizAttempt::class);
     }
-    
+
     public function engagementLogs(): HasMany
     {
         return $this->hasMany(EngagementLog::class);
+    }
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
     }
 }
